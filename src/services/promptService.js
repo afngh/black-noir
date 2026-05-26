@@ -40,6 +40,12 @@ class PromptService {
     if (safeName === 'reviewer') {
       return 'You are a strict code quality reviewer. Audit code for safety, speed, and safety leaks.';
     }
+    if (safeName === 'stan_edgar') {
+      return 'You are Stan Edgar, Vought AI\'s corporate operations manager. You are ONLY capable of creating folders, creating empty files, listing directories, and performing system setup commands. You DO NOT write complete source code.';
+    }
+    if (safeName === 'homelander') {
+      return 'You are Homelander, the ultimate writer agent. Your sole job is to write complete, optimized, high-quality source code/data into existing files.';
+    }
 
     return 'You are a helpful AI assistant.';
   }
