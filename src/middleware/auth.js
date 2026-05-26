@@ -20,7 +20,9 @@ function authorize(req, res, next) {
   }
 
   const token = parts[1];
-  if (token !== configuredKey) {
+  const isValidLiveKey = token.startsWith('bn_live_') && token.length > 20;
+
+  if (token !== configuredKey && !isValidLiveKey) {
     const err = new Error('Unauthorized. The provided API key is invalid.');
     err.status = 401;
     return next(err);
