@@ -9,6 +9,8 @@ import chatRoutes from './routes/chatRoutes.js';
 import errorHandler from './middleware/errorHandler.js';
 import requestLogger from './utils/logger.js';
 import { generate2HourToken } from './middleware/auth.js';
+import { saveUserApiKey } from './services/dbService.js';
+import { verifyClerkSession } from './services/clerkService.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -32,27 +34,47 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Dynamic Client Token Provisioning Endpoint (2-hour expiry)
-app.post('/v1/auth/token', (req, res) => {
-  const { name } = req.body;
+// Dynamic Client Token Provisioning Endpoint (Clerk OTP verify & Supabase write)
+app.post('/v1/auth/token', async (req, res) => {
+  const { name, email, clerkSessionToken } = req.body;
+  
   if (!name) {
     return res.status(400).json({
       success: false,
       error: {
-        message: "Invalid payload. 'name' is required to provision a credentials token.",
+        message: "Invalid request payload. 'name' is required to provision a credentials token.",
         status: 400
       }
     });
   }
 
+  // 1. Optional Clerk OTP Session Verification
+  if (clerkSessionToken) {
+    const clerkResult = await verifyClerkSession(clerkSessionToken);
+    if (!clerkResult.success) {
+      return res.status(401).json({
+        success: false,
+        error: {
+          message: `Clerk verification failed: ${clerkResult.error || 'Invalid session token'}`,
+          status: 401
+        }
+      });
+    }
+  }
+
   const token = generate2HourToken(name.trim());
   const expiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString();
+  const userEmail = email ? email.trim() : 'anonymous_visitor@example.com';
+
+  // 2. Persist credentials metadata to Supabase DB
+  const dbResult = await saveUserApiKey(userEmail, name.trim(), token, expiresAt);
 
   res.status(200).json({
     success: true,
     token: token,
     expiresAt: expiresAt,
-    scope: "soldier-boy.agent:read-write"
+    scope: "soldier-boy.agent:read-write",
+    persistence: dbResult.success ? 'supabase' : dbResult.mode || 'bypassed'
   });
 });
 
