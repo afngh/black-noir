@@ -134,6 +134,36 @@ async function runTests() {
   } catch (err) {
     console.error('❌ Live production test failed:', err.response?.status, err.response?.data || err.message);
   }
+
+  // Test 9: Dynamic 2-Hour HMAC Signed Token Generation & Completions Authorization
+  try {
+    console.log('\n--- Test 9: POST /v1/auth/token & Authorize completions ---');
+    
+    // 1. Generate real signed token
+    console.log('👉 Requesting token for name "Afnan Testing"...');
+    const tokenRes = await axios.post(`${BASE_URL}/v1/auth/token`, {
+      name: 'Afnan Testing'
+    });
+    const tempToken = tokenRes.data.token;
+    console.log('✅ Token provisioned successfully:', tempToken);
+    console.log('⏰ Expiration:', tokenRes.data.expiresAt);
+
+    // 2. Authorize using this generated temporary key
+    console.log('👉 Making a chat request using the temporary 2-hour key...');
+    const chatRes = await axios.post(
+      `${BASE_URL}/v1/chat/completions`,
+      {
+        task: 'simple',
+        messages: [{ role: 'user', content: 'Say hello in 3 words' }]
+      },
+      {
+        headers: { 'Authorization': `Bearer ${tempToken}` }
+      }
+    );
+    console.log('✅ Temporary key successfully authorized! Response:', chatRes.status, JSON.stringify(chatRes.data.message, null, 2));
+  } catch (err) {
+    console.error('❌ Dynamic expiring key integration test failed:', err.response?.status, err.response?.data || err.message);
+  }
 }
 
 runTests();

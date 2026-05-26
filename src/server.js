@@ -8,6 +8,7 @@ dotenv.config();
 import chatRoutes from './routes/chatRoutes.js';
 import errorHandler from './middleware/errorHandler.js';
 import requestLogger from './utils/logger.js';
+import { generate2HourToken } from './middleware/auth.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -28,6 +29,30 @@ app.get('/health', (req, res) => {
     message: 'Server is healthy and running',
     timestamp: new Date().toISOString(),
     uptime: process.uptime()
+  });
+});
+
+// Dynamic Client Token Provisioning Endpoint (2-hour expiry)
+app.post('/v1/auth/token', (req, res) => {
+  const { name } = req.body;
+  if (!name) {
+    return res.status(400).json({
+      success: false,
+      error: {
+        message: "Invalid payload. 'name' is required to provision a credentials token.",
+        status: 400
+      }
+    });
+  }
+
+  const token = generate2HourToken(name.trim());
+  const expiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString();
+
+  res.status(200).json({
+    success: true,
+    token: token,
+    expiresAt: expiresAt,
+    scope: "soldier-boy.agent:read-write"
   });
 });
 

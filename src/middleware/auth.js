@@ -1,6 +1,59 @@
+import crypto from 'crypto';
+
+const SECRET_KEY = process.env.API_KEY || 'afnan-secret-key';
+
+/**
+ * Generate a cryptographically signed token valid for 2 hours
+ */
+export function generate2HourToken(name) {
+  const payload = {
+    name: name,
+    expiresAt: Date.now() + 2 * 60 * 60 * 1000 // 2 hours
+  };
+  const payloadStr = JSON.stringify(payload);
+  const payloadB64 = Buffer.from(payloadStr).toString('base64url');
+  
+  const hmac = crypto.createHmac('sha256', SECRET_KEY);
+  hmac.update(payloadB64);
+  const signature = hmac.digest('base64url');
+  
+  return `bn_live_${payloadB64}.${signature}`;
+}
+
+/**
+ * Verify and validate a token
+ */
+export function verifyToken(token) {
+  try {
+    // Strip prefix if present
+    const rawToken = token.startsWith('bn_live_') ? token.substring(8) : token;
+    
+    const parts = rawToken.split('.');
+    if (parts.length !== 2) return null;
+    
+    const [payloadB64, signature] = parts;
+    const hmac = crypto.createHmac('sha256', SECRET_KEY);
+    hmac.update(payloadB64);
+    const expectedSignature = hmac.digest('base64url');
+    
+    if (signature !== expectedSignature) return null;
+    
+    const payloadStr = Buffer.from(payloadB64, 'base64url').toString('utf8');
+    const payload = JSON.parse(payloadStr);
+    
+    if (Date.now() > payload.expiresAt) {
+      return { expired: true };
+    }
+    
+    return { valid: true, payload };
+  } catch (err) {
+    return null;
+  }
+}
+
 /**
  * API Key Authorization Middleware
- * Verifies Bearer token against the configured API_KEY env variable.
+ * Verifies Bearer token against configured API_KEY env variable or signed expiring user tokens.
  */
 function authorize(req, res, next) {
   const authHeader = req.headers.authorization;
@@ -20,16 +73,34 @@ function authorize(req, res, next) {
   }
 
   const token = parts[1];
-  const isValidLiveKey = token.startsWith('bn_live_') && token.length > 20;
 
-  if (token !== configuredKey && !isValidLiveKey) {
-    const err = new Error('Unauthorized. The provided API key is invalid.');
-    err.status = 401;
-    return next(err);
+  // 1. Allow the master API key configured in env
+  if (token === configuredKey) {
+    return next();
   }
 
-  // Token is valid, proceed
-  next();
+  // 2. Allow our dynamic cryptographically signed tokens
+  const tokenResult = verifyToken(token);
+  if (tokenResult) {
+    if (tokenResult.expired) {
+      const err = new Error('Unauthorized. Your temporary API key has expired (2-hour limit reached).');
+      err.status = 401;
+      return next(err);
+    }
+    // Token is valid! Attach client metadata to request
+    req.client = tokenResult.payload;
+    return next();
+  }
+
+  // 3. Fallback compatibility for testing keys
+  const isValidLiveKey = token.startsWith('bn_live_') && token.length > 30;
+  if (isValidLiveKey) {
+    return next();
+  }
+
+  const err = new Error('Unauthorized. The provided API key is invalid or has expired.');
+  err.status = 401;
+  return next(err);
 }
 
 export default authorize;
