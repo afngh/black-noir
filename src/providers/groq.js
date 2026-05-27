@@ -23,7 +23,7 @@ class GroqProvider {
 
     const model = options.model || this.defaultModel;
     const temperature = options.temperature ?? 0.7;
-    const maxTokens = options.max_tokens ?? 1024;
+    const maxTokens = options.max_tokens ?? 4096; // increased from 1024 — truncated streams cause 500s
 
     const isStream = !!options.stream;
 
@@ -43,7 +43,7 @@ class GroqProvider {
             'Content-Type': 'application/json',
           },
           responseType: isStream ? 'stream' : 'json',
-          timeout: 15000, // 15 seconds timeout
+          timeout: isStream ? 55000 : 20000, // 55s for streams (Railway timeout is 60s), 20s for blocking
         }
       );
 

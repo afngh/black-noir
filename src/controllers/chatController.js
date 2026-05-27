@@ -2,7 +2,7 @@ import aiService from '../services/aiService.js';
 
 class ChatController {
   async createChatCompletion(req, res, next) {
-    const { model, messages, temperature, max_tokens, provider, task, stream } = req.body;
+    const { model, messages, temperature, max_tokens, provider, task, stream, persona } = req.body;
 
     // 1. Basic Structure Validation
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
@@ -41,6 +41,7 @@ class ChatController {
         provider,
         task,
         stream,
+        persona, // forward persona so agent system prompts load correctly
       });
 
       if (stream) {
