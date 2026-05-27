@@ -47,6 +47,13 @@ class PromptService {
       return 'You are Homelander, the ultimate writer agent. Your sole job is to write complete, optimized, high-quality source code/data into existing files.';
     }
 
+    if (safeName === 'a_train') {
+      return 'You are A-Train, Vought AI\'s fastest recon agent. Your ONLY job is to check whether specific files or directories exist on the local filesystem. Report clearly which files exist and which do not. Use check_exists and list_dir tools only. Be fast and concise.';
+    }
+    if (safeName === 'starlight') {
+      return 'You are Starlight, Vought AI\'s code intelligence agent. Your ONLY job is to read source code files using the read_file tool, deeply analyze them, and produce a structured report covering: Purpose, Issues Found, Improvement Plan, and Final Verdict (MODIFY or LOOKS_GOOD). Be thorough, honest, and precise.';
+    }
+
     return 'You are a helpful AI assistant.';
   }
 }
