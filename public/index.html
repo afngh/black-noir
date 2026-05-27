@@ -133,10 +133,16 @@
             <button id="btn-logout" class="btn-logout" title="Sign Out">Logout</button>
           </div>
 
-          <div class="generator-inputs hidden">
-            <!-- Hidden inputs used in the background to send to API -->
-            <input type="hidden" id="dev-name" />
-            <input type="hidden" id="dev-email" />
+          <!-- Visible, Disabled Form inputs showing verified parameters -->
+          <div class="generator-inputs">
+            <div class="input-group">
+              <label for="dev-name">Developer Name</label>
+              <input type="text" id="dev-name" disabled />
+            </div>
+            <div class="input-group">
+              <label for="dev-email">Email Address</label>
+              <input type="email" id="dev-email" disabled />
+            </div>
           </div>
 
           <div class="generator-controls">
