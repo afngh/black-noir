@@ -1,10 +1,10 @@
 /* ==============================================================================
    🧠 black-noir — API Key Dashboard Client Engine
-   Aesthetics & Utility: Dynamic Clerk authentication bindings, native streaming SSE playground
+   Aesthetics & Utility: Dynamic Clerk SDK auth or fully simulated Email OTP portal
    ============================================================================== */
 
 document.addEventListener('DOMContentLoaded', async () => {
-  // DOM Elements
+  // Production DOM Elements
   const devName = document.getElementById('dev-name');
   const devEmail = document.getElementById('dev-email');
   const btnGenerate = document.getElementById('btn-generate');
@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const terminalOut = document.getElementById('terminal-output');
   const timingBadge = document.getElementById('timing-badge');
 
-  // Clerk Auth Bindings
+  // Real Clerk DOM Elements
   const clerkAuthContainer = document.getElementById('clerk-auth-container');
   const generatorFormContainer = document.getElementById('generator-form-container');
   const userProfileBanner = document.getElementById('user-profile-banner');
@@ -28,10 +28,22 @@ document.addEventListener('DOMContentLoaded', async () => {
   const profileEmailEl = document.getElementById('profile-email');
   const btnLogin = document.getElementById('btn-login');
   const btnLogout = document.getElementById('btn-logout');
-  const sandboxIndicator = document.getElementById('sandbox-indicator');
+
+  // Simulated OTP DOM Elements
+  const simulatedAuthContainer = document.getElementById('simulated-auth-container');
+  const simNameInput = document.getElementById('sim-name');
+  const simEmailInput = document.getElementById('sim-email');
+  const btnSimSendOtp = document.getElementById('btn-sim-send-otp');
+  const btnSimVerify = document.getElementById('btn-sim-verify');
+  const btnSimCancel = document.getElementById('btn-sim-cancel');
+  const simStepRequest = document.getElementById('sim-step-request');
+  const simStepVerify = document.getElementById('sim-step-verify');
+  const simSentEmailEl = document.getElementById('sim-sent-email');
+  const simOtpCodeInput = document.getElementById('sim-otp-code');
 
   let clerkInstance = null;
   let countdownInterval = null;
+  let simulatedSession = null; // Store simulated session state
 
   // 1. Fetch Clerk Configuration from Server Backend
   try {
@@ -40,30 +52,102 @@ document.addEventListener('DOMContentLoaded', async () => {
     const publishableKey = configData.clerkPublishableKey;
 
     if (publishableKey && publishableKey.trim() !== '' && publishableKey !== 'your_clerk_publishable_key_here') {
-      // Initialize Clerk JS SDK
+      // Initialize Real Clerk JS SDK
       await waitForAndInitializeClerk(publishableKey);
     } else {
-      // Fallback: Enable Sandbox Mode
-      enableSandboxMode();
+      // Initialize Simulated Sandbox Mode
+      enableSimulatedOtpMode();
     }
   } catch (err) {
-    console.warn('⚠️ Config endpoint unreachable or errored. Falling back to Sandbox Mode:', err.message);
-    enableSandboxMode();
+    console.warn('⚠️ Config endpoint unreachable. Activating local Sandbox OTP simulation:', err.message);
+    enableSimulatedOtpMode();
   }
 
-  // 2. Sandbox Setup Helper
-  function enableSandboxMode() {
-    sandboxIndicator.classList.remove('hidden');
+  // ==========================================
+  // 🪵 SIMULATED OTP LOGIC
+  // ==========================================
+  function enableSimulatedOtpMode() {
     clerkAuthContainer.classList.add('hidden');
-    generatorFormContainer.classList.remove('hidden');
-    userProfileBanner.classList.add('hidden');
     
-    // Enable manual editing
-    devName.disabled = false;
-    devEmail.disabled = false;
+    // Check if session already exists
+    const savedSession = localStorage.getItem('bn_simulated_session');
+    if (savedSession) {
+      try {
+        simulatedSession = JSON.parse(savedSession);
+        loginSimulatedUser(simulatedSession.name, simulatedSession.email);
+        return;
+      } catch (e) {
+        localStorage.removeItem('bn_simulated_session');
+      }
+    }
+
+    // Otherwise, show simulated OTP login request
+    simulatedAuthContainer.classList.remove('hidden');
+    generatorFormContainer.classList.add('hidden');
+    userProfileBanner.classList.add('hidden');
+    simStepRequest.classList.remove('hidden');
+    simStepVerify.classList.add('hidden');
   }
 
-  // 3. Clerk JS SDK Integration Loader
+  btnSimSendOtp.addEventListener('click', () => {
+    const name = simNameInput.value.trim();
+    const email = simEmailInput.value.trim();
+
+    if (!name) {
+      alert('⚠️ Please enter a Developer Name.');
+      return;
+    }
+    if (!email || !email.includes('@')) {
+      alert('⚠️ Please enter a valid Email Address.');
+      return;
+    }
+
+    // Transition to OTP verification step
+    simSentEmailEl.textContent = email;
+    simStepRequest.classList.add('hidden');
+    simStepVerify.classList.remove('hidden');
+    simOtpCodeInput.value = '';
+    simOtpCodeInput.focus();
+  });
+
+  btnSimCancel.addEventListener('click', () => {
+    simStepRequest.classList.remove('hidden');
+    simStepVerify.classList.add('hidden');
+  });
+
+  btnSimVerify.addEventListener('click', () => {
+    const code = simOtpCodeInput.value.trim();
+    if (code.length < 4) {
+      alert('⚠️ Please enter a verification code.');
+      return;
+    }
+
+    // Any code allows sign-in in sandbox
+    const name = simNameInput.value.trim();
+    const email = simEmailInput.value.trim();
+
+    simulatedSession = { name, email };
+    localStorage.setItem('bn_simulated_session', JSON.stringify(simulatedSession));
+
+    loginSimulatedUser(name, email);
+  });
+
+  function loginSimulatedUser(name, email) {
+    simulatedAuthContainer.classList.add('hidden');
+    generatorFormContainer.classList.remove('hidden');
+    userProfileBanner.classList.remove('hidden');
+
+    profileNameEl.textContent = name;
+    profileEmailEl.textContent = `${email} (Verified Sandbox)`;
+
+    // Assign hidden variables to send to /v1/auth/token
+    devName.value = name;
+    devEmail.value = email;
+  }
+
+  // ==========================================
+  // 🧬 REAL CLERK SDK INTEGRATION
+  // ==========================================
   function waitForAndInitializeClerk(publishableKey) {
     return new Promise((resolve) => {
       const checkClerk = async () => {
@@ -77,11 +161,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             resolve();
           } catch (initErr) {
             console.error('❌ Clerk load failed:', initErr);
-            enableSandboxMode();
+            enableSimulatedOtpMode();
             resolve();
           }
         } else {
-          // Keep polling for script load
           setTimeout(checkClerk, 100);
         }
       };
@@ -89,18 +172,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // 4. Render Logged-In / Logged-Out views
   function renderClerkAuthState() {
     if (!clerkInstance) return;
 
+    simulatedAuthContainer.classList.add('hidden');
+
     if (clerkInstance.user) {
-      // LOGGED IN STATE
       clerkAuthContainer.classList.add('hidden');
       generatorFormContainer.classList.remove('hidden');
       userProfileBanner.classList.remove('hidden');
-      sandboxIndicator.classList.add('hidden');
 
-      // Sync and lock profile fields
       const firstName = clerkInstance.user.firstName || '';
       const lastName = clerkInstance.user.lastName || '';
       const fullName = `${firstName} ${lastName}`.trim() || 'Clerk User';
@@ -112,40 +193,45 @@ document.addEventListener('DOMContentLoaded', async () => {
       devName.value = fullName;
       devEmail.value = email;
 
-      // Lock forms to prevent user injection of false emails
-      devName.disabled = true;
-      devEmail.disabled = true;
-
     } else {
-      // LOGGED OUT STATE
       clerkAuthContainer.classList.remove('hidden');
       generatorFormContainer.classList.add('hidden');
       userProfileBanner.classList.add('hidden');
     }
   }
 
-  // 5. Auth Action Listeners
   btnLogin.addEventListener('click', () => {
     if (clerkInstance) {
       clerkInstance.openSignIn();
     }
   });
 
+  // ==========================================
+  // 🚪 SIGN OUT / LOGOUT UTILITY
+  // ==========================================
   btnLogout.addEventListener('click', async () => {
     if (clerkInstance) {
       await clerkInstance.signOut();
       renderClerkAuthState();
       keyContainer.classList.add('hidden');
+    } else {
+      // Clear simulated session
+      simulatedSession = null;
+      localStorage.removeItem('bn_simulated_session');
+      enableSimulatedOtpMode();
+      keyContainer.classList.add('hidden');
     }
   });
 
-  // 6. Generate Key Action (Uses Clerk Session Token)
+  // ==========================================
+  // ⚡ GENERATE KEY & PLAYGROUND COMPS
+  // ==========================================
   btnGenerate.addEventListener('click', async () => {
     const name = devName.value.trim();
     const email = devEmail.value.trim();
 
     if (!name) {
-      alert('⚠️ Please enter your Developer Name.');
+      alert('⚠️ Authentication session lost. Please reload the page.');
       return;
     }
 
@@ -193,7 +279,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // 7. High-Precision Countdown Timer (Supporting Hours)
+  // High-Precision Countdown Timer (Supporting Hours)
   function startCountdownTimer(expirationTime) {
     if (countdownInterval) {
       clearInterval(countdownInterval);
@@ -242,7 +328,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     countdownInterval = setInterval(updateTimer, 1000);
   }
 
-  // 8. One-Click Clipboard Copier
+  // One-Click Clipboard Copier
   btnCopy.addEventListener('click', async () => {
     const key = apiKeyValue.textContent;
     if (!key || key.includes('...')) return;
@@ -258,7 +344,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // 9. Live Stream SSE completions Playground
+  // Live Stream SSE completions Playground
   btnRun.addEventListener('click', async () => {
     const key = playKey.value.trim();
     const prompt = playPrompt.value.trim();

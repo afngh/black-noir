@@ -39,7 +39,7 @@
           <p>Generate secure dynamic tokens with a strict <strong>2-hour time-to-live (TTL)</strong> constraint backed by Clerk and Supabase.</p>
         </div>
 
-        <!-- Clerk Authentication Portal (Shown only if Clerk is active & user is logged out) -->
+        <!-- Clerk Production Authentication Portal (Shown only if Clerk publishable key is set) -->
         <div id="clerk-auth-container" class="clerk-auth-container hidden">
           <div class="auth-message-box">
             <span class="lock-icon">🔒</span>
@@ -51,8 +51,52 @@
           </button>
         </div>
 
+        <!-- Simulated Sandbox OTP Authentication Portal (Shown when Clerk is unconfigured) -->
+        <div id="simulated-auth-container" class="clerk-auth-container hidden">
+          <div class="auth-message-box warning-box">
+            <span class="lock-icon">⚡</span>
+            <p><strong>Local Sandbox Mode Active</strong>. Enter your email below to receive a simulated OTP code to verify your developer profile.</p>
+          </div>
+
+          <!-- Step 1: Request OTP Details -->
+          <div id="sim-step-request" class="generator-inputs">
+            <div class="input-group">
+              <label for="sim-name">Developer Name</label>
+              <input type="text" id="sim-name" placeholder="Enter your name (e.g. Soldier Boy)" />
+            </div>
+            <div class="input-group">
+              <label for="sim-email">Email Address</label>
+              <input type="email" id="sim-email" placeholder="Enter your email (e.g. hero@vought.com)" />
+            </div>
+            <button id="btn-sim-send-otp" class="btn btn-primary btn-glow full-width">
+              <span class="btn-text">Send Verification OTP</span>
+              <span class="btn-icon">📨</span>
+            </button>
+          </div>
+
+          <!-- Step 2: Input Verification Code -->
+          <div id="sim-step-verify" class="generator-inputs hidden">
+            <div class="otp-instruction-banner">
+              <p>📨 We simulated sending a 6-digit OTP code to <strong id="sim-sent-email">email@example.com</strong>. Enter any 6-digit code (e.g. <code>123456</code>) to verify!</p>
+            </div>
+            <div class="input-group">
+              <label for="sim-otp-code">6-Digit Verification Code</label>
+              <input type="text" id="sim-otp-code" placeholder="Enter 6-digit OTP code" maxlength="6" style="text-align: center; font-size: 1.3rem; letter-spacing: 0.3em; font-family: var(--font-mono);" />
+            </div>
+            <div class="otp-button-group">
+              <button id="btn-sim-verify" class="btn btn-primary btn-glow full-width">
+                <span class="btn-text">Confirm Code & Log In</span>
+                <span class="btn-icon">✓</span>
+              </button>
+              <button id="btn-sim-cancel" class="btn btn-secondary full-width" style="margin-top: 0.5rem;">
+                <span class="btn-text">Cancel</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
         <!-- Main Form Controls Container (Editable in Sandbox, Pre-filled & locked in Clerk Auth) -->
-        <div id="generator-form-container" class="generator-form-container">
+        <div id="generator-form-container" class="generator-form-container hidden">
           <!-- User info banner if logged in -->
           <div id="user-profile-banner" class="user-profile-banner hidden">
             <div class="avatar-dot"></div>
@@ -63,21 +107,10 @@
             <button id="btn-logout" class="btn-logout" title="Sign Out">Logout</button>
           </div>
 
-          <div class="generator-inputs">
-            <div class="input-group">
-              <label for="dev-name">Developer Name *</label>
-              <input type="text" id="dev-name" placeholder="Enter your name (e.g. Soldier Boy)" required />
-            </div>
-            <div class="input-group">
-              <label for="dev-email">Email Address (Optional)</label>
-              <input type="email" id="dev-email" placeholder="Enter your email (e.g. hero@vought.com)" />
-            </div>
-          </div>
-
-          <!-- Mode indicator / warning banner -->
-          <div id="sandbox-indicator" class="mode-indicator sandbox-indicator hidden">
-            <span class="indicator-dot"></span>
-            <p>Running in Sandbox Mode (Clerk integration is unconfigured locally).</p>
+          <div class="generator-inputs hidden">
+            <!-- Hidden inputs used in the background to send to API -->
+            <input type="hidden" id="dev-name" />
+            <input type="hidden" id="dev-email" />
           </div>
 
           <div class="generator-controls">

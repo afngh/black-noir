@@ -224,13 +224,27 @@ body {
 }
 
 .auth-message-box {
-  background: rgba(224, 37, 255, 0.04);
-  border: 1px solid rgba(224, 37, 255, 0.12);
   border-radius: 12px;
   padding: 1.2rem;
   display: flex;
   gap: 1rem;
   align-items: center;
+}
+
+.auth-message-box.warning-box {
+  background: rgba(245, 158, 11, 0.04);
+  border: 1px solid rgba(245, 158, 11, 0.15);
+}
+
+.auth-message-box.warning-box p {
+  color: var(--text-main);
+  font-size: 0.9rem;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+.auth-message-box.warning-box strong {
+  color: var(--warning);
 }
 
 .lock-icon {
@@ -242,6 +256,33 @@ body {
   font-size: 0.9rem;
   font-weight: 400;
   line-height: 1.4;
+}
+
+.otp-instruction-banner {
+  background: rgba(0, 240, 255, 0.04);
+  border: 1px solid rgba(0, 240, 255, 0.15);
+  border-radius: 8px;
+  padding: 0.8rem 1rem;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: var(--text-main);
+}
+
+.otp-instruction-banner strong {
+  color: var(--accent-cyan);
+}
+
+.otp-instruction-banner code {
+  background: rgba(255, 255, 255, 0.06);
+  padding: 0.1rem 0.3rem;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+}
+
+.otp-button-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 /* --- Verified User Profiles --- */
