@@ -9,6 +9,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="index.css">
+  
+  <!-- Clerk SDK Loader -->
+  <script async crossorigin="anonymous" src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js" type="text/javascript"></script>
 </head>
 <body>
   <!-- Futuristic animated background glow grids -->
@@ -36,22 +39,53 @@
           <p>Generate secure dynamic tokens with a strict <strong>2-hour time-to-live (TTL)</strong> constraint backed by Clerk and Supabase.</p>
         </div>
 
-        <div class="generator-inputs">
-          <div class="input-group">
-            <label for="dev-name">Developer Name *</label>
-            <input type="text" id="dev-name" placeholder="Enter your name (e.g. Soldier Boy)" required />
+        <!-- Clerk Authentication Portal (Shown only if Clerk is active & user is logged out) -->
+        <div id="clerk-auth-container" class="clerk-auth-container hidden">
+          <div class="auth-message-box">
+            <span class="lock-icon">🔒</span>
+            <p>Authentication Required. Please verify your identity using email OTP verification to register and mint API keys.</p>
           </div>
-          <div class="input-group">
-            <label for="dev-email">Email Address (Optional)</label>
-            <input type="email" id="dev-email" placeholder="Enter your email (e.g. hero@vought.com)" />
-          </div>
+          <button id="btn-login" class="btn btn-primary btn-glow full-width">
+            <span class="btn-text">Sign In with Vought ID</span>
+            <span class="btn-icon">🔑</span>
+          </button>
         </div>
 
-        <div class="generator-controls">
-          <button id="btn-generate" class="btn btn-primary btn-glow">
-            <span class="btn-text">Generate Secure API Key</span>
-            <span class="btn-icon">⚡</span>
-          </button>
+        <!-- Main Form Controls Container (Editable in Sandbox, Pre-filled & locked in Clerk Auth) -->
+        <div id="generator-form-container" class="generator-form-container">
+          <!-- User info banner if logged in -->
+          <div id="user-profile-banner" class="user-profile-banner hidden">
+            <div class="avatar-dot"></div>
+            <div class="profile-details">
+              <span id="profile-name" class="profile-name">Authenticated User</span>
+              <span id="profile-email" class="profile-email">user@vought.com</span>
+            </div>
+            <button id="btn-logout" class="btn-logout" title="Sign Out">Logout</button>
+          </div>
+
+          <div class="generator-inputs">
+            <div class="input-group">
+              <label for="dev-name">Developer Name *</label>
+              <input type="text" id="dev-name" placeholder="Enter your name (e.g. Soldier Boy)" required />
+            </div>
+            <div class="input-group">
+              <label for="dev-email">Email Address (Optional)</label>
+              <input type="email" id="dev-email" placeholder="Enter your email (e.g. hero@vought.com)" />
+            </div>
+          </div>
+
+          <!-- Mode indicator / warning banner -->
+          <div id="sandbox-indicator" class="mode-indicator sandbox-indicator hidden">
+            <span class="indicator-dot"></span>
+            <p>Running in Sandbox Mode (Clerk integration is unconfigured locally).</p>
+          </div>
+
+          <div class="generator-controls">
+            <button id="btn-generate" class="btn btn-primary btn-glow full-width">
+              <span class="btn-text">Generate Secure API Key</span>
+              <span class="btn-icon">⚡</span>
+            </button>
+          </div>
         </div>
 
         <!-- Hidden initially, shown after generation -->

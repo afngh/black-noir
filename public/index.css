@@ -82,12 +82,8 @@ body {
 }
 
 @keyframes glowFloat {
-  0% {
-    transform: translate(0, 0) scale(1);
-  }
-  100% {
-    transform: translate(5%, 5%) scale(1.15);
-  }
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(5%, 5%) scale(1.15); }
 }
 
 /* --- Container & Layout --- */
@@ -219,12 +215,129 @@ body {
   font-weight: 300;
 }
 
+/* --- Clerk Auth Interface --- */
+.clerk-auth-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  animation: slideDown 0.3s ease forwards;
+}
+
+.auth-message-box {
+  background: rgba(224, 37, 255, 0.04);
+  border: 1px solid rgba(224, 37, 255, 0.12);
+  border-radius: 12px;
+  padding: 1.2rem;
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.lock-icon {
+  font-size: 1.6rem;
+}
+
+.auth-message-box p {
+  color: var(--text-main);
+  font-size: 0.9rem;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+/* --- Verified User Profiles --- */
+.user-profile-banner {
+  background: rgba(16, 185, 129, 0.05);
+  border: 1px solid rgba(16, 185, 129, 0.18);
+  border-radius: 12px;
+  padding: 0.85rem 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.2rem;
+}
+
+.avatar-dot {
+  width: 10px;
+  height: 10px;
+  background-color: var(--success);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--success);
+}
+
+.profile-details {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.profile-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.profile-email {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.btn-logout {
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.15);
+  color: var(--error);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-logout:hover {
+  background: var(--error);
+  color: #fff;
+}
+
+/* --- Mode Indicators --- */
+.mode-indicator {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.8rem 1rem;
+  border-radius: 10px;
+}
+
+.sandbox-indicator {
+  background: rgba(245, 158, 11, 0.04);
+  border: 1px solid rgba(245, 158, 11, 0.1);
+}
+
+.sandbox-indicator p {
+  font-size: 0.82rem;
+  font-weight: 400;
+  color: var(--warning);
+}
+
+.indicator-dot {
+  width: 8px;
+  height: 8px;
+  background-color: var(--warning);
+  border-radius: 50%;
+  box-shadow: 0 0 6px var(--warning);
+}
+
 /* --- Form Fields --- */
 .generator-inputs,
 .playground-inputs {
   display: flex;
   flex-direction: column;
   gap: 1.2rem;
+}
+
+.generator-form-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
 .input-group {
@@ -256,6 +369,13 @@ body {
   outline: none;
   border-color: var(--accent-cyan);
   box-shadow: 0 0 10px rgba(0, 240, 255, 0.1);
+}
+
+.input-group input:disabled {
+  background: rgba(255, 255, 255, 0.02);
+  border-color: rgba(255, 255, 255, 0.03);
+  color: #71717a;
+  cursor: not-allowed;
 }
 
 .input-group textarea {
@@ -322,6 +442,10 @@ body {
 .btn-glow:hover::after {
   opacity: 0.5;
   filter: blur(8px);
+}
+
+.full-width {
+  width: 100%;
 }
 
 /* --- Key Result Panel (Hidden Initially) --- */

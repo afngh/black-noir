@@ -1,9 +1,9 @@
 /* ==============================================================================
    🧠 black-noir — API Key Dashboard Client Engine
-   Aesthetics & Utility: Dynamic reactive DOM bindings, native streaming SSE reader
+   Aesthetics & Utility: Dynamic Clerk authentication bindings, native streaming SSE playground
    ============================================================================== */
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   // DOM Elements
   const devName = document.getElementById('dev-name');
   const devEmail = document.getElementById('dev-email');
@@ -20,27 +20,152 @@ document.addEventListener('DOMContentLoaded', () => {
   const terminalOut = document.getElementById('terminal-output');
   const timingBadge = document.getElementById('timing-badge');
 
+  // Clerk Auth Bindings
+  const clerkAuthContainer = document.getElementById('clerk-auth-container');
+  const generatorFormContainer = document.getElementById('generator-form-container');
+  const userProfileBanner = document.getElementById('user-profile-banner');
+  const profileNameEl = document.getElementById('profile-name');
+  const profileEmailEl = document.getElementById('profile-email');
+  const btnLogin = document.getElementById('btn-login');
+  const btnLogout = document.getElementById('btn-logout');
+  const sandboxIndicator = document.getElementById('sandbox-indicator');
+
+  let clerkInstance = null;
   let countdownInterval = null;
 
-  // 1. Generate Key Trigger (Linked to v1/auth/token)
+  // 1. Fetch Clerk Configuration from Server Backend
+  try {
+    const configRes = await fetch('/v1/auth/config');
+    const configData = await configRes.json();
+    const publishableKey = configData.clerkPublishableKey;
+
+    if (publishableKey && publishableKey.trim() !== '' && publishableKey !== 'your_clerk_publishable_key_here') {
+      // Initialize Clerk JS SDK
+      await waitForAndInitializeClerk(publishableKey);
+    } else {
+      // Fallback: Enable Sandbox Mode
+      enableSandboxMode();
+    }
+  } catch (err) {
+    console.warn('⚠️ Config endpoint unreachable or errored. Falling back to Sandbox Mode:', err.message);
+    enableSandboxMode();
+  }
+
+  // 2. Sandbox Setup Helper
+  function enableSandboxMode() {
+    sandboxIndicator.classList.remove('hidden');
+    clerkAuthContainer.classList.add('hidden');
+    generatorFormContainer.classList.remove('hidden');
+    userProfileBanner.classList.add('hidden');
+    
+    // Enable manual editing
+    devName.disabled = false;
+    devEmail.disabled = false;
+  }
+
+  // 3. Clerk JS SDK Integration Loader
+  function waitForAndInitializeClerk(publishableKey) {
+    return new Promise((resolve) => {
+      const checkClerk = async () => {
+        if (window.Clerk) {
+          try {
+            clerkInstance = new window.Clerk(publishableKey);
+            await clerkInstance.load();
+            
+            // Listen and render active auth states
+            renderClerkAuthState();
+            resolve();
+          } catch (initErr) {
+            console.error('❌ Clerk load failed:', initErr);
+            enableSandboxMode();
+            resolve();
+          }
+        } else {
+          // Keep polling for script load
+          setTimeout(checkClerk, 100);
+        }
+      };
+      checkClerk();
+    });
+  }
+
+  // 4. Render Logged-In / Logged-Out views
+  function renderClerkAuthState() {
+    if (!clerkInstance) return;
+
+    if (clerkInstance.user) {
+      // LOGGED IN STATE
+      clerkAuthContainer.classList.add('hidden');
+      generatorFormContainer.classList.remove('hidden');
+      userProfileBanner.classList.remove('hidden');
+      sandboxIndicator.classList.add('hidden');
+
+      // Sync and lock profile fields
+      const firstName = clerkInstance.user.firstName || '';
+      const lastName = clerkInstance.user.lastName || '';
+      const fullName = `${firstName} ${lastName}`.trim() || 'Clerk User';
+      const email = clerkInstance.user.primaryEmailAddress?.emailAddress || '';
+
+      profileNameEl.textContent = fullName;
+      profileEmailEl.textContent = email;
+
+      devName.value = fullName;
+      devEmail.value = email;
+
+      // Lock forms to prevent user injection of false emails
+      devName.disabled = true;
+      devEmail.disabled = true;
+
+    } else {
+      // LOGGED OUT STATE
+      clerkAuthContainer.classList.remove('hidden');
+      generatorFormContainer.classList.add('hidden');
+      userProfileBanner.classList.add('hidden');
+    }
+  }
+
+  // 5. Auth Action Listeners
+  btnLogin.addEventListener('click', () => {
+    if (clerkInstance) {
+      clerkInstance.openSignIn();
+    }
+  });
+
+  btnLogout.addEventListener('click', async () => {
+    if (clerkInstance) {
+      await clerkInstance.signOut();
+      renderClerkAuthState();
+      keyContainer.classList.add('hidden');
+    }
+  });
+
+  // 6. Generate Key Action (Uses Clerk Session Token)
   btnGenerate.addEventListener('click', async () => {
     const name = devName.value.trim();
     const email = devEmail.value.trim();
 
     if (!name) {
-      alert('⚠️ Please enter a Developer Name.');
+      alert('⚠️ Please enter your Developer Name.');
       return;
     }
 
     try {
       setButtonLoading(btnGenerate, true, 'Provisioning...');
       
+      let clerkSessionToken = undefined;
+
+      // Fetch dynamic active JWT session token if Clerk is logged in
+      if (clerkInstance && clerkInstance.session) {
+        clerkSessionToken = await clerkInstance.session.getToken();
+      }
+
       const response = await fetch('/v1/auth/token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: name,
-          email: email || undefined
+          email: email || undefined,
+          clerkSessionToken: clerkSessionToken
         })
       });
 
@@ -68,7 +193,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // 2. High-Precision Countdown Timer (Supporting Hours)
+  // 7. High-Precision Countdown Timer (Supporting Hours)
   function startCountdownTimer(expirationTime) {
     if (countdownInterval) {
       clearInterval(countdownInterval);
@@ -117,7 +242,7 @@ document.addEventListener('DOMContentLoaded', () => {
     countdownInterval = setInterval(updateTimer, 1000);
   }
 
-  // 3. One-Click Clipboard Copier
+  // 8. One-Click Clipboard Copier
   btnCopy.addEventListener('click', async () => {
     const key = apiKeyValue.textContent;
     if (!key || key.includes('...')) return;
@@ -133,7 +258,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // 4. Live Stream SSE completions Playground
+  // 9. Live Stream SSE completions Playground
   btnRun.addEventListener('click', async () => {
     const key = playKey.value.trim();
     const prompt = playPrompt.value.trim();

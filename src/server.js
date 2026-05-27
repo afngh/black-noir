@@ -42,6 +42,13 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Retrieve Clerk authentication public configurations
+app.get('/v1/auth/config', (req, res) => {
+  res.status(200).json({
+    clerkPublishableKey: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || ''
+  });
+});
+
 // Dynamic Client Token Provisioning Endpoint (Clerk OTP verify & Supabase write)
 app.post('/v1/auth/token', async (req, res) => {
   const { name, email, clerkSessionToken } = req.body;
