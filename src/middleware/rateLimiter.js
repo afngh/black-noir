@@ -3,10 +3,12 @@ import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 /**
  * Rate Limiter Middleware — Railway-Compatible
  *
+ * NOTE: express-rate-limit v8 'draft-8' standardHeaders has a bug with Express 5
+ * where it tries to hash req (IncomingMessage) as the partition key, crashing
+ * with ERR_INVALID_ARG_TYPE. Use 'draft-7' (RateLimit-* headers) instead.
+ *
  * Railway deploys behind a reverse proxy. We set `app.set('trust proxy', 1)` in server.js
  * so req.ip reflects the real client IP from X-Forwarded-For.
- *
- * Uses ipKeyGenerator from express-rate-limit for correct IPv6 handling.
  */
 
 // Per-API-key key resolver — falls back to real client IP for unauthenticated requests
@@ -14,9 +16,9 @@ function resolveKey(req) {
   const authHeader = req.headers.authorization;
   if (authHeader && authHeader.startsWith('Bearer ')) {
     const token = authHeader.slice(7).trim();
-    if (token) return `key:${token.substring(0, 24)}`; // first 24 chars as bucket key
+    if (token) return `key:${token.substring(0, 24)}`;
   }
-  return ipKeyGenerator(req); // uses express-rate-limit's IPv6-safe generator
+  return ipKeyGenerator(req);
 }
 
 // Standard error response matching the rest of the API schema
@@ -32,13 +34,12 @@ function rateLimitHandler(req, res, options) {
 
 /**
  * TIER 1 — Global limiter (all routes)
- * Blocks bots and scrapers. 300 requests / 5 minutes per IP.
- * Health check is excluded so Railway health probes never get rate limited.
+ * 300 requests / 5 minutes per IP. Health check exempt.
  */
 export const globalLimiter = rateLimit({
   windowMs: 5 * 60 * 1000,
   max: 300,
-  standardHeaders: 'draft-8',
+  standardHeaders: 'draft-7', // 'draft-8' crashes with Express 5 due to crypto partition bug
   legacyHeaders: false,
   keyGenerator: ipKeyGenerator,
   message: 'Too many requests from this IP address. Please slow down and try again shortly.',
@@ -48,13 +49,12 @@ export const globalLimiter = rateLimit({
 
 /**
  * TIER 2 — Auth / token provisioning limiter
- * Prevents token farming and brute force on POST /v1/auth/token.
- * 10 requests / 15 minutes per IP.
+ * 10 requests / 15 minutes per IP — prevents token farming.
  */
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
-  standardHeaders: 'draft-8',
+  standardHeaders: 'draft-7',
   legacyHeaders: false,
   keyGenerator: ipKeyGenerator,
   message: 'Too many token provisioning requests. Please wait 15 minutes before trying again.',
@@ -62,9 +62,9 @@ export const authLimiter = rateLimit({
 });
 
 /**
- * TIER 3 — AI completions limiter (the expensive endpoint)
- * Authenticated callers (Bearer token): 60 requests / minute per API key.
- * Unauthenticated callers (will fail auth anyway): 20 requests / minute per IP.
+ * TIER 3 — AI completions limiter
+ * Authenticated: 60 req/min per API key.
+ * Unauthenticated: 20 req/min per IP.
  */
 export const completionsLimiter = rateLimit({
   windowMs: 60 * 1000,
@@ -72,26 +72,24 @@ export const completionsLimiter = rateLimit({
     const authHeader = req.headers.authorization;
     return authHeader && authHeader.startsWith('Bearer ') ? 60 : 20;
   },
-  standardHeaders: 'draft-8',
+  standardHeaders: 'draft-7',
   legacyHeaders: false,
   keyGenerator: resolveKey,
-  message: 'AI completions rate limit exceeded. Authenticated users may send up to 60 requests per minute per API key.',
+  message: 'AI completions rate limit exceeded. Authenticated users may send up to 60 requests per minute.',
   handler: rateLimitHandler,
 });
 
 /**
  * TIER 4 — Streaming completions limiter
- * Streaming holds connections open longer → stricter limit.
- * 20 streaming requests / minute per API key.
- * Skips non-streaming requests entirely.
+ * 20 streaming requests / minute per API key. Skips non-streaming requests.
  */
 export const streamingLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 20,
-  standardHeaders: 'draft-8',
+  standardHeaders: 'draft-7',
   legacyHeaders: false,
   keyGenerator: resolveKey,
-  message: 'Streaming rate limit exceeded. You may send up to 20 streaming requests per minute per API key.',
+  message: 'Streaming rate limit exceeded. You may send up to 20 streaming requests per minute.',
   handler: rateLimitHandler,
   skip: (req) => !req.body?.stream,
 });
