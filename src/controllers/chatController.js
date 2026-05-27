@@ -45,32 +45,26 @@ class ChatController {
       });
 
       if (stream) {
-        // Set SSE headers before piping
-        res.writeHead(200, {
-          'Content-Type': 'text/event-stream',
-          'Cache-Control': 'no-cache',
-          'Connection': 'keep-alive',
-        });
-
         const providerStream = response.stream;
 
-        // Pipe chunks from Groq's raw HTTP stream → client
-        // .on('data') with explicit toString() avoids the Express 5 Buffer rejection
-        providerStream.on('data', (chunk) => {
-          res.write(chunk.toString('utf-8'));
-        });
+        // Set SSE headers
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Connection', 'keep-alive');
+        res.setHeader('X-Accel-Buffering', 'no'); // disable Nginx/Railway buffering
+        res.status(200);
 
-        providerStream.on('end', () => {
-          res.end();
-        });
+        // pipe() is the correct way to forward a raw Node.js IncomingMessage
+        // (axios stream response) to an Express writable response in Express 5
+        providerStream.pipe(res);
 
         providerStream.on('error', (err) => {
           console.error('[Streaming Error]', err.message);
           if (!res.headersSent) {
-            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.status(500).json({ success: false, error: { message: err.message, status: 500 } });
+          } else {
+            res.end();
           }
-          res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`);
-          res.end();
         });
 
         return;
