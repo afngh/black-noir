@@ -16,15 +16,28 @@ import requestLogger from './utils/logger.js';
 import { generate2HourToken } from './middleware/auth.js';
 import { saveUserApiKey } from './services/dbService.js';
 import { verifyClerkSession } from './services/clerkService.js';
+import {
+  globalLimiter,
+  authLimiter,
+  completionsLimiter,
+  streamingLimiter,
+} from './middleware/rateLimiter.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Trust Railway's reverse proxy so req.ip is the real client IP
+// (Railway sets X-Forwarded-For; without this, req.ip is always the proxy IP)
+app.set('trust proxy', 1);
 
 // Enable Cross-Origin Resource Sharing (CORS)
 app.use(cors());
 
 // Parse incoming JSON requests
 app.use(express.json());
+
+// Apply global rate limiter to all routes (protects every endpoint)
+app.use(globalLimiter);
 
 // Serve static assets from public directory (API Key Dashboard website)
 app.use(express.static(path.join(__dirname, '../public')));
@@ -50,7 +63,8 @@ app.get('/v1/auth/config', (req, res) => {
 });
 
 // Dynamic Client Token Provisioning Endpoint (Clerk OTP verify & Supabase write)
-app.post('/v1/auth/token', async (req, res) => {
+// authLimiter: 10 requests per 15 minutes per IP (prevents token farming)
+app.post('/v1/auth/token', authLimiter, async (req, res) => {
   const { name, email, clerkSessionToken } = req.body;
   
   if (!name) {
@@ -94,7 +108,9 @@ app.post('/v1/auth/token', async (req, res) => {
 });
 
 // Register Core Chat completions router under the requested namespace
-app.use('/v1/chat', chatRoutes);
+// completionsLimiter: 60 req/min per API key, 20 req/min per IP (unauthenticated)
+// streamingLimiter:   20 streaming req/min per API key
+app.use('/v1/chat', completionsLimiter, streamingLimiter, chatRoutes);
 
 // 404 Route handler
 app.use((req, res, next) => {
