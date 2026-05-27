@@ -4,42 +4,68 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>black-noir — API Key Portal</title>
-  <!-- Google Fonts: Outfit for sleek typography & Fira Code for keys/terminal -->
+  <!-- Google Fonts: Fraunces for bold editorial headings & DM Sans for body readability -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,700;0,9..144,900;1,9..144,700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="index.css">
   
   <!-- Clerk SDK Loader -->
   <script async crossorigin="anonymous" src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js" type="text/javascript"></script>
 </head>
 <body>
-  <!-- Futuristic animated background glow grids -->
-  <div class="bg-grid"></div>
-  <div class="bg-glow bg-glow-1"></div>
-  <div class="bg-glow bg-glow-2"></div>
+  <!-- Announcement Banner -->
+  <div class="announcement-banner">
+    <p>⚡ Vought AI Key Portal v2.0 is live! Verified Developer OTP authentication is now active. <a href="#playground-anchor">Go to Playground →</a></p>
+  </div>
 
-  <div class="container">
-    <!-- Header -->
-    <header class="header">
+  <!-- Full-Width Navbar -->
+  <nav class="navbar">
+    <div class="nav-container">
       <div class="logo-area">
         <span class="logo-icon">🧠</span>
-        <h1 class="logo-title">black-noir</h1>
+        <span class="logo-title">black-noir</span>
       </div>
-      <p class="logo-subtitle">Unified AI API Gateway & Token Provisioning Portal</p>
+      <div class="nav-links">
+        <a href="#provisioning-anchor" class="nav-item">Provisioning</a>
+        <a href="#playground-anchor" class="nav-item">Playground</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Absolute Floating Pixel Mosaic Decoration (Hero element top-right) -->
+  <div class="pixel-decoration-container">
+    <div class="pixel pixel-1"></div>
+    <div class="pixel pixel-2"></div>
+    <div class="pixel pixel-3"></div>
+    <div class="pixel pixel-4"></div>
+    <div class="pixel pixel-5"></div>
+    <div class="pixel pixel-6"></div>
+    <div class="pixel pixel-7"></div>
+    <div class="pixel pixel-8"></div>
+    <div class="pixel pixel-9"></div>
+    <div class="pixel pixel-10"></div>
+  </div>
+
+  <div class="container">
+    <!-- Hero / Header Section -->
+    <header class="hero-section">
+      <div class="badge">VOUGHT SECURITIES</div>
+      <h1 class="hero-title">Developer Identity & API Gateway ✦</h1>
+      <p class="hero-subtitle">Describe your profile in seconds to generate secure 2-hour time-limited credentials matching your real Supabase developer profile.</p>
     </header>
 
     <!-- Main Grid Layout -->
     <main class="main-grid">
       <!-- Left Column: Generator Card -->
-      <section class="card generator-card">
+      <section id="provisioning-anchor" class="card generator-card">
         <div class="card-header">
-          <div class="badge">SECURITY HUB</div>
+          <div class="section-badge">KEY ISSUER</div>
           <h2>Temporary Key Provisioning</h2>
           <p>Generate secure dynamic tokens with a strict <strong>2-hour time-to-live (TTL)</strong> constraint backed by Clerk and Supabase.</p>
         </div>
 
-        <!-- Clerk Production Authentication Portal (Shown only if Clerk publishable key is set) -->
+        <!-- Clerk Production Authentication Portal -->
         <div id="clerk-auth-container" class="clerk-auth-container hidden">
           <div class="auth-message-box">
             <span class="lock-icon">🔒</span>
@@ -68,7 +94,7 @@
               <label for="sim-email">Email Address</label>
               <input type="email" id="sim-email" placeholder="Enter your email (e.g. hero@vought.com)" />
             </div>
-            <button id="btn-sim-send-otp" class="btn btn-primary btn-glow full-width">
+            <button id="btn-sim-send-otp" class="btn btn-accent full-width">
               <span class="btn-text">Send Verification OTP</span>
               <span class="btn-icon">📨</span>
             </button>
@@ -84,11 +110,11 @@
               <input type="text" id="sim-otp-code" placeholder="Enter 6-digit OTP code" maxlength="6" style="text-align: center; font-size: 1.3rem; letter-spacing: 0.3em; font-family: var(--font-mono);" />
             </div>
             <div class="otp-button-group">
-              <button id="btn-sim-verify" class="btn btn-primary btn-glow full-width">
+              <button id="btn-sim-verify" class="btn btn-accent full-width">
                 <span class="btn-text">Confirm Code & Log In</span>
                 <span class="btn-icon">✓</span>
               </button>
-              <button id="btn-sim-cancel" class="btn btn-secondary full-width" style="margin-top: 0.5rem;">
+              <button id="btn-sim-cancel" class="btn btn-ghost full-width" style="margin-top: 0.5rem;">
                 <span class="btn-text">Cancel</span>
               </button>
             </div>
@@ -114,7 +140,7 @@
           </div>
 
           <div class="generator-controls">
-            <button id="btn-generate" class="btn btn-primary btn-glow full-width">
+            <button id="btn-generate" class="btn btn-accent full-width">
               <span class="btn-text">Generate Secure API Key</span>
               <span class="btn-icon">⚡</span>
             </button>
@@ -153,9 +179,9 @@
       </section>
 
       <!-- Right Column: Interactive Developer Playground -->
-      <section class="card playground-card">
+      <section id="playground-anchor" class="card playground-card">
         <div class="card-header">
-          <div class="badge">SANDBOX</div>
+          <div class="section-badge">PLAYGROUND</div>
           <h2>Live Stream SSE Playground</h2>
           <p>Test your newly generated API key. Send a live completions stream request directly to `black-noir` using real-time SSE.</p>
         </div>
@@ -196,7 +222,7 @@
 
     <!-- Footer -->
     <footer class="footer">
-      <p>© 2026 Vought AI Inc. All rights reserved. Powering the soldier-boy terminal companion.</p>
+      <p>© 2026 Vought AI Inc. Powered by real data from myscheme.gov.in. All rights reserved.</p>
     </footer>
   </div>
 
