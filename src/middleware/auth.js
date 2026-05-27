@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { verifyKeyInDatabase } from '../services/dbService.js';
 
 const SECRET_KEY = process.env.API_KEY || 'afnan-secret-key';
 
@@ -55,7 +56,7 @@ export function verifyToken(token) {
  * API Key Authorization Middleware
  * Verifies Bearer token against configured API_KEY env variable or signed expiring user tokens.
  */
-function authorize(req, res, next) {
+async function authorize(req, res, next) {
   const authHeader = req.headers.authorization;
   const configuredKeys = (process.env.API_KEY || 'afnan-secret-key')
     .split(',')
@@ -81,7 +82,25 @@ function authorize(req, res, next) {
     return next();
   }
 
-  // 2. Allow our dynamic cryptographically signed tokens
+  // 2. Query Supabase database to verify dynamic keys if database is active
+  try {
+    const dbResult = await verifyKeyInDatabase(token);
+    if (dbResult) {
+      if (dbResult.expired) {
+        const err = new Error('Unauthorized. Your temporary API key has expired inside Supabase.');
+        err.status = 401;
+        return next(err);
+      }
+      if (dbResult.valid) {
+        req.client = dbResult.payload;
+        return next();
+      }
+    }
+  } catch (dbErr) {
+    console.error('⚠️ Database auth verification failed, falling back to signature check:', dbErr.message);
+  }
+
+  // 3. Fallback: Allow our dynamic cryptographically signed tokens (stateless mode fallback)
   const tokenResult = verifyToken(token);
   if (tokenResult) {
     if (tokenResult.expired) {

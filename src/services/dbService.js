@@ -62,3 +62,50 @@ export async function saveUserApiKey(email, name, apiKey, expiresAt) {
     return { success: false, error: err.message };
   }
 }
+
+/**
+ * Verify if the API key exists in Supabase and is not expired
+ */
+export async function verifyKeyInDatabase(apiKey) {
+  if (!supabase) return null;
+
+  try {
+    const { data: keyData, error: keyError } = await supabase
+      .from('api_keys')
+      .select('expires_at, user_id')
+      .eq('api_key', apiKey)
+      .single();
+
+    if (keyError || !keyData) return null;
+
+    const expiresAt = new Date(keyData.expires_at).getTime();
+    if (Date.now() > expiresAt) {
+      return { expired: true };
+    }
+
+    // Query matching user info
+    let name = 'Supabase User';
+    let email = 'supabase@example.com';
+
+    if (keyData.user_id) {
+      const { data: userData } = await supabase
+        .from('users')
+        .select('name, email')
+        .eq('id', keyData.user_id)
+        .single();
+
+      if (userData) {
+        name = userData.name || name;
+        email = userData.email || email;
+      }
+    }
+
+    return {
+      valid: true,
+      payload: { name, email, expiresAt }
+    };
+  } catch (err) {
+    console.error('❌ Supabase database key verification failed:', err.message);
+    return null;
+  }
+}
