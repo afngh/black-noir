@@ -65,6 +65,7 @@ export async function saveUserApiKey(email, name, apiKey, expiresAt) {
 
 /**
  * Verify if the API key exists in Supabase and is not expired
+ * Schema: api_keys(id uuid, key text, created_at timestamptz, expires_at timestamptz)
  */
 export async function verifyKeyInDatabase(apiKey) {
   if (!supabase) return null;
@@ -72,8 +73,8 @@ export async function verifyKeyInDatabase(apiKey) {
   try {
     const { data: keyData, error: keyError } = await supabase
       .from('api_keys')
-      .select('expires_at, user_id')
-      .eq('api_key', apiKey)
+      .select('expires_at')
+      .eq('key', apiKey)
       .single();
 
     if (keyError || !keyData) return null;
@@ -83,26 +84,9 @@ export async function verifyKeyInDatabase(apiKey) {
       return { expired: true };
     }
 
-    // Query matching user info
-    let name = 'Supabase User';
-    let email = 'supabase@example.com';
-
-    if (keyData.user_id) {
-      const { data: userData } = await supabase
-        .from('users')
-        .select('name, email')
-        .eq('id', keyData.user_id)
-        .single();
-
-      if (userData) {
-        name = userData.name || name;
-        email = userData.email || email;
-      }
-    }
-
     return {
       valid: true,
-      payload: { name, email, expiresAt }
+      payload: { expiresAt }
     };
   } catch (err) {
     console.error('❌ Supabase database key verification failed:', err.message);
