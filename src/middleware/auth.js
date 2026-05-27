@@ -57,7 +57,9 @@ export function verifyToken(token) {
  */
 function authorize(req, res, next) {
   const authHeader = req.headers.authorization;
-  const configuredKey = process.env.API_KEY || 'afnan-secret-key';
+  const configuredKeys = (process.env.API_KEY || 'afnan-secret-key')
+    .split(',')
+    .map(key => key.trim());
 
   if (!authHeader) {
     const err = new Error('Unauthorized. Authorization header is missing.');
@@ -74,8 +76,8 @@ function authorize(req, res, next) {
 
   const token = parts[1];
 
-  // 1. Allow the master API key configured in env
-  if (token === configuredKey) {
+  // 1. Allow any of the master API keys configured in env (static)
+  if (configuredKeys.includes(token)) {
     return next();
   }
 
@@ -89,12 +91,6 @@ function authorize(req, res, next) {
     }
     // Token is valid! Attach client metadata to request
     req.client = tokenResult.payload;
-    return next();
-  }
-
-  // 3. Fallback compatibility for testing keys
-  const isValidLiveKey = token.startsWith('bn_live_') && token.length > 30;
-  if (isValidLiveKey) {
     return next();
   }
 
