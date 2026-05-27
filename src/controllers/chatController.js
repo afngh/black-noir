@@ -45,7 +45,7 @@ class ChatController {
       });
 
       if (stream) {
-        // Set headers for Server-Sent Events (SSE)
+        // Set SSE headers before piping
         res.writeHead(200, {
           'Content-Type': 'text/event-stream',
           'Cache-Control': 'no-cache',
@@ -54,8 +54,10 @@ class ChatController {
 
         const providerStream = response.stream;
 
+        // Pipe chunks from Groq's raw HTTP stream → client
+        // .on('data') with explicit toString() avoids the Express 5 Buffer rejection
         providerStream.on('data', (chunk) => {
-          res.write(chunk);
+          res.write(chunk.toString('utf-8'));
         });
 
         providerStream.on('end', () => {
@@ -63,7 +65,10 @@ class ChatController {
         });
 
         providerStream.on('error', (err) => {
-          console.error('[Streaming Error]', err);
+          console.error('[Streaming Error]', err.message);
+          if (!res.headersSent) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+          }
           res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`);
           res.end();
         });
