@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>black-noir — API Key Portal</title>
+  <!-- Google Fonts: Outfit for sleek typography & Fira Code for keys/terminal -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="index.css">
+</head>
+<body>
+  <!-- Futuristic animated background glow grids -->
+  <div class="bg-grid"></div>
+  <div class="bg-glow bg-glow-1"></div>
+  <div class="bg-glow bg-glow-2"></div>
+
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <div class="logo-area">
+        <span class="logo-icon">🧠</span>
+        <h1 class="logo-title">black-noir</h1>
+      </div>
+      <p class="logo-subtitle">Unified AI API Gateway & Token Provisioning Portal</p>
+    </header>
+
+    <!-- Main Grid Layout -->
+    <main class="main-grid">
+      <!-- Left Column: Generator Card -->
+      <section class="card generator-card">
+        <div class="card-header">
+          <div class="badge">SECURITY HUB</div>
+          <h2>Temporary Key Provisioning</h2>
+          <p>Generate secure dynamic tokens with a strict <strong>2-hour time-to-live (TTL)</strong> constraint backed by Clerk and Supabase.</p>
+        </div>
+
+        <div class="generator-inputs">
+          <div class="input-group">
+            <label for="dev-name">Developer Name *</label>
+            <input type="text" id="dev-name" placeholder="Enter your name (e.g. Soldier Boy)" required />
+          </div>
+          <div class="input-group">
+            <label for="dev-email">Email Address (Optional)</label>
+            <input type="email" id="dev-email" placeholder="Enter your email (e.g. hero@vought.com)" />
+          </div>
+        </div>
+
+        <div class="generator-controls">
+          <button id="btn-generate" class="btn btn-primary btn-glow">
+            <span class="btn-text">Generate Secure API Key</span>
+            <span class="btn-icon">⚡</span>
+          </button>
+        </div>
+
+        <!-- Hidden initially, shown after generation -->
+        <div id="key-result-container" class="key-result-container hidden">
+          <div class="key-display-box">
+            <label>YOUR SECURE TOKEN</label>
+            <div class="key-wrapper">
+              <code id="api-key-value">bn_live_...</code>
+              <button id="btn-copy" class="btn-copy" title="Copy to clipboard">
+                <span class="copy-icon">📋</span>
+                <span class="copy-success hidden">✓ Copied!</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="meta-stats">
+            <div class="stat-box">
+              <span class="stat-label">EXPIRATION TIMER</span>
+              <span id="countdown" class="stat-value countdown-glow">02:00:00</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-label">STATUS</span>
+              <span class="stat-value status-active">● ACTIVE</span>
+            </div>
+          </div>
+
+          <div class="warning-banner">
+            <span class="warn-icon">⚠️</span>
+            <p>Make sure to copy your key now. It will expire in exactly 2 hours and cannot be recovered.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right Column: Interactive Developer Playground -->
+      <section class="card playground-card">
+        <div class="card-header">
+          <div class="badge">SANDBOX</div>
+          <h2>Live Stream SSE Playground</h2>
+          <p>Test your newly generated API key. Send a live completions stream request directly to `black-noir` using real-time SSE.</p>
+        </div>
+
+        <div class="playground-inputs">
+          <div class="input-group">
+            <label for="play-key">Active API Key</label>
+            <input type="text" id="play-key" placeholder="Enter key (e.g. bn_live_...)" />
+          </div>
+
+          <div class="input-group">
+            <label for="play-prompt">Chat Completions Prompt</label>
+            <textarea id="play-prompt" rows="3" placeholder="Ask anything to test your key... (e.g., 'Say Hello in 3 different languages')"></textarea>
+          </div>
+
+          <button id="btn-run" class="btn btn-secondary">
+            <span class="btn-text">Execute Chat completions</span>
+            <span class="btn-icon">🚀</span>
+          </button>
+        </div>
+
+        <div class="terminal-container">
+          <div class="terminal-header">
+            <div class="terminal-dots">
+              <span class="dot red"></span>
+              <span class="dot yellow"></span>
+              <span class="dot green"></span>
+            </div>
+            <span class="terminal-title">bash — black-noir stream completions</span>
+            <span id="timing-badge" class="timing-badge hidden">0.00s</span>
+          </div>
+          <div class="terminal-body">
+            <pre id="terminal-output" class="terminal-empty">// Output will stream live here in real-time...</pre>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <p>© 2026 Vought AI Inc. All rights reserved. Powering the soldier-boy terminal companion.</p>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

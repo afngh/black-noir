@@ -1,9 +1,14 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 // Load environment variables
 dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 import chatRoutes from './routes/chatRoutes.js';
 import errorHandler from './middleware/errorHandler.js';
@@ -20,6 +25,9 @@ app.use(cors());
 
 // Parse incoming JSON requests
 app.use(express.json());
+
+// Serve static assets from public directory (API Key Dashboard website)
+app.use(express.static(path.join(__dirname, '../public')));
 
 // Enable Request Logger
 app.use(requestLogger);
